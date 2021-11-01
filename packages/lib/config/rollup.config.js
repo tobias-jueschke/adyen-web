@@ -55,7 +55,8 @@ async function getPlugins({ compress, analyze, version }) {
             exclude: ['node_modules/**', '**/*.test.*'],
             ignore: [/core-js/, /@babel\/runtime/],
             presets: [
-                ['@babel/preset-typescript',
+                [
+                    '@babel/preset-typescript',
                     {
                         isTSX: true,
                         allExtensions: true,
@@ -63,17 +64,17 @@ async function getPlugins({ compress, analyze, version }) {
                         jsxPragmaFrag: 'Fragment'
                     }
                 ],
-                ['@babel/preset-react', {
-                    pragma: 'h',
-                    pragmaFrag: 'Fragment'
-                }],
+                [
+                    '@babel/preset-react',
+                    {
+                        pragma: 'h',
+                        pragmaFrag: 'Fragment'
+                    }
+                ],
                 [
                     '@babel/preset-env',
                     {
-                        targets: {
-                            chrome: '58',
-                            ie: '11'
-                        }
+                        useBuiltIns: false,
                     }
                 ]
             ],
@@ -82,7 +83,8 @@ async function getPlugins({ compress, analyze, version }) {
                 [
                     '@babel/plugin-transform-runtime',
                     {
-                        corejs: 3
+                        corejs: 3,
+                        absoluteRuntime: true,
                     }
                 ]
             ]
