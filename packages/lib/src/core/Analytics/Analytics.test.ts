@@ -5,8 +5,8 @@ import postTelemetry from '../Services/post-telemetry';
 jest.mock('../Services/collect-id');
 jest.mock('../Services/post-telemetry');
 
-const mockedCollectId = <jest.Mock>collectId;
-const mockedPostTelemetry = <jest.Mock>postTelemetry;
+const mockedCollectId = collectId as jest.Mock;
+const mockedPostTelemetry = postTelemetry as jest.Mock;
 
 describe('Analytics', () => {
     const collectIdPromiseMock = jest.fn(() => Promise.resolve('123456'));
