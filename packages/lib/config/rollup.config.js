@@ -4,14 +4,11 @@ import json from '@rollup/plugin-json';
 import postcss from 'rollup-plugin-postcss';
 import replace from '@rollup/plugin-replace';
 import eslint from '@rollup/plugin-eslint';
-import babel from '@rollup/plugin-babel';
-import { terserConfig, modernTerserConfig } from './terser.config';
+import babel, {getBabelOutputPlugin} from '@rollup/plugin-babel';
+import { terserConfig } from './terser.config';
 import pkg from '../package.json';
 
 const currentVersion = require('./version')();
-import path from 'path';
-
-require('dotenv').config({ path: path.resolve('../../', '.env') });
 
 if (process.env.CI !== 'true') {
     console.warn(
@@ -35,25 +32,7 @@ const watchConfig = {
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
-const polyfillPlugin = [
-    '@babel/plugin-transform-runtime',
-    {
-        corejs: 3,
-        absoluteRuntime: true
-    }
-];
-
-const polyfillPreset = [
-    '@babel/preset-env',
-    {
-        useBuiltIns: false
-    }
-];
-
-async function getPlugins({ compress, analyze, version, modern }) {
-    const babelPlugins = modern ? [] : [polyfillPlugin];
-    const babelPreset = modern ? [] : [polyfillPreset];
-
+async function getPlugins({ compress, analyze, version }) {
     return [
         resolve({ extensions }),
         commonjs(),
@@ -73,13 +52,33 @@ async function getPlugins({ compress, analyze, version, modern }) {
             preventAssignment: true
         }),
         babel({
-            configFile: path.resolve(__dirname, '..', 'babel.config.json'),
             extensions,
             exclude: ['node_modules/**', '**/*.test.*'],
             ignore: [/core-js/, /@babel\/runtime/],
-            babelHelpers: modern ? 'bundled' : 'runtime',
-            plugins: babelPlugins,
-            presets: babelPreset
+            presets: [
+                [
+                    '@babel/preset-typescript',
+                    {
+                        isTSX: true,
+                        allExtensions: true,
+                        jsxPragma: 'h',
+                        jsxPragmaFrag: 'Fragment'
+                    }
+                ],
+                [
+                    '@babel/preset-react',
+                    {
+                        pragma: 'h',
+                        pragmaFrag: 'Fragment'
+                    }
+                ],
+                [
+                    '@babel/preset-env',
+                    {
+                        useBuiltIns: false
+                    }
+                ]
+            ],
         }),
         json({ namedExports: false, compact: true, preferConst: true }),
         postcss({
@@ -90,9 +89,9 @@ async function getPlugins({ compress, analyze, version, modern }) {
             inject: false,
             extract: 'adyen.css'
         }),
-        compress && (await import('rollup-plugin-terser')).terser(modern ? modernTerserConfig : terserConfig),
+        compress && (await import('rollup-plugin-terser')).terser(terserConfig),
         analyze &&
-            (await import('rollup-plugin-visualizer')).default({
+            AdyenBF(await import('rollup-plugin-visualizer')).default({
                 title: 'Adyen Web bundle visualizer',
                 gzipSize: true
             })
@@ -102,7 +101,6 @@ async function getPlugins({ compress, analyze, version, modern }) {
 function getExternals() {
     const peerDeps = Object.keys(pkg.peerDependencies || {});
     const dependencies = Object.keys(pkg.dependencies || {});
-
     return [...peerDeps, ...dependencies];
 }
 
@@ -110,18 +108,10 @@ export default async () => {
     const plugins = await getPlugins({
         compress: isProduction,
         analyze: isBundleAnalyzer,
-        version: currentVersion,
-        modern: false
+        version: currentVersion
     });
 
-    const modernPlugins = await getPlugins({
-        compress: isProduction,
-        analyze: isBundleAnalyzer,
-        version: currentVersion,
-        modern: true
-    });
-
-    const build = [
+    return [
         {
             input,
             external: getExternals(),
@@ -141,37 +131,40 @@ export default async () => {
                 }
             ],
             watch: watchConfig
-        }
-    ];
-
-    // only add modern build and umd when building in production
-    if (isProduction) {
-        build.push({
-            input,
-            external: getExternals(),
-            plugins: modernPlugins,
-            output: [
-                {
-                    dir: 'dist/es.modern',
-                    format: 'esm',
-                    chunkFileNames: '[name].js',
-                    ...(!isProduction ? { sourcemap: true } : {})
-                }
-            ],
-            watch: watchConfig
-        });
-        build.push({
+        },
+        {
             input,
             plugins,
             output: {
                 name: 'AdyenCheckout',
                 file: pkg['umd:main'],
-                format: 'umd',
+                format: 'esm',
                 inlineDynamicImports: true,
-                sourcemap: true
+                sourcemap: true,
+                plugins: [
+                    getBabelOutputPlugin({
+                        presets: [
+                            [
+                                '@babel/preset-env',
+                                {
+                                    useBuiltIns: false,
+                                    targets: { ie: '11' },
+                                    modules: 'umd'
+                                }
+                            ]
+                        ],
+                        plugins: [
+                            [
+                                '@babel/plugin-transform-runtime',
+                                {
+                                    corejs: 3
+                                }
+                            ]
+                        ]
+                    })
+                ]
             },
             watch: watchConfig
-        });
-    }
-    return build;
+        }
+    ];
 };
