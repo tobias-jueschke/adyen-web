@@ -31,6 +31,16 @@ export async function initSession() {
         paymentMethodsConfiguration: {
             paywithgoogle: {
                 buttonType: 'plain'
+            },
+            card: {
+                clickToPayConfiguration: {
+                    schemas: ['visa'],
+                    shopperIdentity: {
+                        value: 'guilherme.ribeiro-visaclicktopay1@adyen.com',
+                        // value: 'guilherme-visaclicktopay1@adyen.com',
+                        type: 'email'
+                    }
+                }
             }
         }
     });

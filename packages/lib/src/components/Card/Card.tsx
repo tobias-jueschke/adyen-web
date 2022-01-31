@@ -8,6 +8,7 @@ import { CardElementData, CardElementProps, BinLookupResponse } from './types';
 import triggerBinLookUp from '../internal/SecuredFields/binLookup/triggerBinLookUp';
 import { CbObjOnBinLookup } from '../internal/SecuredFields/lib/types';
 import { reject } from '../internal/SecuredFields/utils';
+import ClickToPay from './components/ClickToPay';
 
 export class CardElement extends UIElement<CardElementProps> {
     public static type = 'scheme';
@@ -169,6 +170,13 @@ export class CardElement extends UIElement<CardElementProps> {
                 loadingContext={this.props.loadingContext}
                 commonProps={{ isCollatingErrors: this.props.SRConfig.collateErrors }}
             >
+                {this.props.clickToPayConfiguration?.schemas.length > 0 && (
+                    <ClickToPay
+                        schemas={this.props.clickToPayConfiguration.schemas}
+                        shopperIdentity={this.props.clickToPayConfiguration.shopperIdentity}
+                    />
+                )}
+
                 <CardInput
                     setComponentRef={this.setComponentRef}
                     {...this.props}
