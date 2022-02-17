@@ -9,9 +9,34 @@ import triggerBinLookUp from '../internal/SecuredFields/binLookup/triggerBinLook
 import { CbObjOnBinLookup } from '../internal/SecuredFields/lib/types';
 import { reject } from '../internal/SecuredFields/utils';
 import ClickToPay from './components/ClickToPay';
+import ClickToPayService from './services/ClickToPayService';
+import SrcSdkLoader from './services/sdks/SrcSdkLoader';
+import { configMock } from './services/configMock';
 
 export class CardElement extends UIElement<CardElementProps> {
     public static type = 'scheme';
+
+    private clickToPayService?: ClickToPayService;
+
+    constructor(props) {
+        super(props);
+
+        if (props.clickToPayConfiguration?.schemas.length) {
+            const { schemas, shopperIdentity } = props.clickToPayConfiguration;
+            const srcSdkLoader = new SrcSdkLoader(schemas, props.environment);
+            this.clickToPayService = new ClickToPayService(configMock, srcSdkLoader, shopperIdentity);
+        }
+
+        if (props.clickToPayConfiguration?.prefetch) {
+            this.prefetch();
+        }
+    }
+
+    public async prefetch(): Promise<void> {
+        if (this.clickToPayService) {
+            await this.clickToPayService.initialize();
+        }
+    }
 
     protected static defaultProps = {
         onBinLookup: () => {},
@@ -172,6 +197,7 @@ export class CardElement extends UIElement<CardElementProps> {
             >
                 {this.props.clickToPayConfiguration?.schemas.length > 0 && (
                     <ClickToPay
+                        ctpService={this.clickToPayService}
                         environment={this.props.environment}
                         schemas={this.props.clickToPayConfiguration.schemas}
                         shopperIdentity={this.props.clickToPayConfiguration.shopperIdentity}

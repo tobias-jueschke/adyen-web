@@ -34,6 +34,7 @@ export async function initSession() {
             },
             card: {
                 clickToPayConfiguration: {
+                    prefetch: true,
                     schemas: ['visa'],
                     shopperIdentity: {
                         value: 'guilherme.ribeiro-visaclicktopay1@adyen.com',
