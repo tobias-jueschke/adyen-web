@@ -20,6 +20,8 @@ module.exports = (app = express(), options = {}) => {
         next();
     });
 
+    app.all('/webhook',(req, res) => {console.log(`Received Data ${JSON.stringify(req.body)}`); res.send('')});
+
     app.all('/originKeys', (req, res) => getOriginKeys(res, req));
 
     app.all('/paymentMethods', (req, res) => getPaymentMethods(res, req.body));
